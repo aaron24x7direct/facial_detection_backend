@@ -7,10 +7,12 @@ class FacialDetection(Base):
     __tablename__ = 'facial_detections'
     
     id = Column(Integer, primary_key=True)
-    fullname = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'))
     time_in = Column(DateTime, default=datetime.utcnow)
     time_out = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="facials")
 
 
 class FacialDetectionUserImage(Base):

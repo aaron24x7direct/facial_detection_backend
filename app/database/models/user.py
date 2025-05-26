@@ -20,3 +20,4 @@ class User(Base):
 
     role = relationship("Role", back_populates="users")
     facial_images = relationship("FacialDetectionUserImage", back_populates="user", cascade="all, delete-orphan")
+    facials = relationship("FacialDetection", back_populates="user", cascade="all, delete-orphan")
