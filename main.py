@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 from fastapi.staticfiles import StaticFiles
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 load_dotenv()
 
@@ -23,7 +25,8 @@ app.add_middleware(
 async def just_test():
     return {
         "message": "Test Aivo Call is running.",
-        "origin": origins
+        "origin": origins,
+        "date": datetime.utcnow().replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Asia/Manila"))
     }
 
 app.include_router(authentication.router)

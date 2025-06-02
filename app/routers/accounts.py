@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.database.models import User
+from app.database.models import User, StudentInfo
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from starlette import status
@@ -24,12 +24,19 @@ class ChangeAccountDetailsRequest(BaseModel):
     fullname: str
     email: str
     phone_number: int
-    section: str
     username: str
 
 @router.get("/user", status_code=status.HTTP_200_OK)
 async def user(db: db_dependency, user: user_dependency): 
-    current_user = db.query(User).filter(User.id == user["id"]).first()
+    current_user = (
+        db.query(User)
+        .options(
+            joinedload(User.role),
+            joinedload(User.student_infos).joinedload(StudentInfo.subjects)
+        )
+        .filter(User.id == user["id"])
+        .first()
+    )
     return current_user
 
 @router.put("/change-password", status_code=status.HTTP_204_NO_CONTENT)
@@ -63,7 +70,6 @@ async def change_account_details(db: db_dependency, user: user_dependency, chang
     current_user_model.fullname = change_account_details_request.fullname
     current_user_model.email = change_account_details_request.email
     current_user_model.phone_number = change_account_details_request.phone_number
-    current_user_model.section = change_account_details_request.section
     current_user_model.username = change_account_details_request.username
 
     db.add(current_user_model)
