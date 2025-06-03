@@ -1,20 +1,22 @@
 FROM python:3.11-slim
 
-# Install dependencies and tesseract
-RUN apt-get update && apt-get install -y tesseract-ocr libtesseract-dev
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Optional: install language data files if needed
-# RUN apt-get install -y tesseract-ocr-eng
+# Install dependencies: tesseract + poppler for PDF support
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    libtesseract-dev \
+    poppler-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your app code
 COPY . .
 
-# Command to run your FastAPI app
+EXPOSE 8000
+
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
