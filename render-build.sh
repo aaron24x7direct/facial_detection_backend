@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
+set -o errexit
 
-# Install dependencies required for PDF and OCR
+# Install system packages
 apt-get update && apt-get install -y tesseract-ocr poppler-utils
 
-# Then install Python packages
+# Install Python dependencies
 pip install -r requirements.txt
