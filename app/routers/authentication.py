@@ -21,6 +21,7 @@ from pdf2image import convert_from_path
 import re
 from sqlalchemy.exc import IntegrityError
 
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 router = APIRouter(
     prefix="/authenticated",
     tags=["authenticated"]
