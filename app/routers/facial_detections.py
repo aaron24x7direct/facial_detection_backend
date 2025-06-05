@@ -20,34 +20,94 @@ router = APIRouter(
 class FacialDetectionRequest(BaseModel):
     user_id: int
 
+@router.get("/graph/section", status_code=status.HTTP_200_OK)
+async def section_facial_detection_graph(
+    db: db_dependency,
+    user: user_dependency
+):
+    # Join FacialDetection with Subject and User to access sections
+    results = (
+        db.query(
+            func.date(FacialDetection.created_at).label("date"),
+            Subject.section.label("section"),
+            FacialDetection.status.label("status"),
+            func.count(FacialDetection.id).label("count")
+        )
+        .join(Subject, FacialDetection.subject_id == Subject.id)
+        .join(User, FacialDetection.user_id == User.id)
+        .filter(FacialDetection.status.in_(["Late", "Present"]))
+        .group_by(func.date(FacialDetection.created_at), Subject.section, FacialDetection.status)
+        .order_by(func.date(FacialDetection.created_at))
+        .all()
+    )
+
+    # Structure result: { section: [ { date, Late, Present }, ... ] }
+    grouped = {}
+
+    for date, section, status, count in results:
+        date_str = date.strftime("%Y-%m-%d")
+        if section not in grouped:
+            grouped[section] = {}
+
+        if date_str not in grouped[section]:
+            grouped[section][date_str] = {"date": date_str, "Late": 0, "Present": 0}
+
+        grouped[section][date_str][status] = count
+
+    # Convert inner dicts to list
+    response = {
+        section: list(data_by_date.values())
+        for section, data_by_date in grouped.items()
+    }
+
+    return response
+
 @router.get("/graph/me", status_code=status.HTTP_200_OK)
 async def get_facial_detection_graph(db: db_dependency, user: user_dependency):
     results = (
         db.query(
             func.date(FacialDetection.created_at).label("date"),
+            FacialDetection.status.label("status"),
             func.count(FacialDetection.id).label("count")
         )
         .filter(FacialDetection.user_id == user["id"])
-        .group_by(func.date(FacialDetection.created_at))
+        .filter(FacialDetection.status.in_(["Late", "Present"]))
+        .group_by(func.date(FacialDetection.created_at), FacialDetection.status)
         .order_by(func.date(FacialDetection.created_at))
         .all()
     )
 
-    return [{"date": date.strftime("%Y-%m-%d"), "count": count} for date, count in results]
+    grouped = {}
+    for date, status, count in results:
+        date_str = date.strftime("%Y-%m-%d")
+        if date_str not in grouped:
+            grouped[date_str] = {"date": date_str, "Late": 0, "Present": 0}
+        grouped[date_str][status] = count
+
+    return list(grouped.values())
 
 @router.get("/graph", status_code=status.HTTP_200_OK)
 async def get_facial_detection_graph(db: db_dependency):
     results = (
         db.query(
             func.date(FacialDetection.created_at).label("date"),
+            FacialDetection.status.label("status"),
             func.count(FacialDetection.id).label("count")
         )
-        .group_by(func.date(FacialDetection.created_at))
+        .filter(FacialDetection.status.in_(["Late", "Present"]))
+        .group_by(func.date(FacialDetection.created_at), FacialDetection.status)
         .order_by(func.date(FacialDetection.created_at))
         .all()
     )
 
-    return [{"date": date.strftime("%Y-%m-%d"), "count": count} for date, count in results]
+    grouped = {}
+    for date, status, count in results:
+        date_str = date.strftime("%Y-%m-%d")
+        if date_str not in grouped:
+            grouped[date_str] = {"date": date_str, "Late": 0, "Present": 0}
+        grouped[date_str][status] = count
+
+    return list(grouped.values())
 
 @router.get("", status_code=status.HTTP_200_OK)
 async def read_all_facial_detection(db: db_dependency):
